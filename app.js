@@ -16,7 +16,8 @@ const cors = require("cors");
 
 const app = express();
 
-app.use(xss());
+// app.use(xss());
+
 app.use(
   cors({
     origin: "*",
