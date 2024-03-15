@@ -1,6 +1,8 @@
 const jwt = require("jsonwebtoken");
 const otpGenerator = require("otp-generator");
 const User = require("../models/user");
+const crypto = require("crypto");
+const { promisify } = require("util");
 
 const signToken = (userId) =>
   jwt.sign(
@@ -30,6 +32,10 @@ exports.login = async (req, res, next) => {
   }
 
   const token = signToken(userDoc._id);
+
+  // Signup => register - sendOTP - verifyOTP
+
+  // https://api.tawk.com/auth/register
 
   //Register New User
   exports.register = async (req, res, next) => {
@@ -135,4 +141,124 @@ exports.login = async (req, res, next) => {
       token,
     });
   };
+};
+
+exports.protect = async (req, res, next) => {
+  // 1) Getting token (JWT) and check if it's there
+  let token;
+
+  if (
+    req.headers.authorization &&
+    req.headers.authorization.startsWith("Bearer")
+  ) {
+    token = req.headers.authorization.split(" ")[1];
+  } else if (req.cookies.jwt) {
+    token = req.cookies.jwt;
+  } else {
+    req.status(400).json({
+      status: "error",
+      message: "You are not logged in! Please login to get access",
+    });
+    return;
+  }
+
+  // 2) verification of token
+  const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
+
+  // 3) check if user still exists
+  const this_user = await User.findById(decoded.userId);
+
+  if (!this_user) {
+    res.status(400).json({
+      status: "error",
+      message: "User doesn't exists",
+    });
+  }
+
+  // 4) check if user changed their password after token was issued
+  if (this_user.changedPasswordAfter(decoded.iat)) {
+    res.status(400).json({
+      status: "error",
+      message: "User recently updated password! Please log in again",
+    });
+  }
+
+  req.user = this_user;
+  next();
+};
+
+//Types of routes -> Protected (Only logged in users can access these) & UnProtected
+
+exports.forgotPassword = async (req, res, next) => {
+  // 1) get user email
+  const user = await User.findOne({ email: req.body.email });
+  if (!user) {
+    res.status(400).json({
+      status: "error",
+      message: "There is no user with given email address",
+    });
+    return;
+  }
+
+  // 2) generate random reset token
+  const resetToken = user.createPasswordResetToke();
+  const resetURL = `https://tawk.com/auth/reset-password/?code=${resetToken}`;
+  try {
+    // TODO => Send Emai With Reset URL
+    res.status(200).json({
+      status: "success",
+      message: "Reset Password link sent to Email",
+    });
+  } catch (error) {
+    user.passwordResetToken = undefined;
+    user.passwordResetExpires = undefined;
+
+    await user.save({ validateBeforeSave: false });
+
+    res.status(500).json({
+      status: "error",
+      message: "There was an error sending the email, Please try again later.",
+    });
+  }
+};
+
+exports.resetPassword = async (req, res, next) => {
+  // 1) get user based on token
+  const hashedToken = crypto
+    .createHash("sha256")
+    .update(req.params.token)
+    .digest("hex");
+
+  const user = await User.findOne({
+    passwordResetToken: hashedToken,
+    passwordResetExpires: { $gt: Date.now() },
+  });
+
+  // 2) if token has expired or submission is out of time window
+  if (!user) {
+    res.status(400).json({
+      status: "error",
+      message: "Token is Invalid or Expired",
+    });
+  }
+
+  // 3) Updated users password and set resetToken and expiry to undefined
+  user.password = req.body.password;
+  user.passwordConfirm = req.body.passwordConfirm;
+
+  user.passwordResetToken = undefined;
+  user.passwrodResetExpires = undefined;
+
+  await user.save();
+
+  // 4) Log in the user and Send new JWT
+
+  // TODO => send an email to user informing about password reset
+  const token = signToken(user._id);
+
+  res.status(200).json({
+    status: "success",
+    message: "Password Reset complete",
+    token,
+  });
 };
