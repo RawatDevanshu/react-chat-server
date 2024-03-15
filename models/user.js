@@ -72,6 +72,16 @@ userSchema.pre("save", async function (next) {
   next();
 });
 
+userSchema.pre("save", async function (next) {
+  // Only run this fxn if OTP is actually modified
+  if (!this.isModified("password")) return next();
+
+  // Hash the OTP with the cost of 12
+  this.password = await bcryptjs.hash(this.password, 12);
+
+  next();
+});
+
 userSchema.methods.correctPassword = async function (
   candidatePassword,
   userPassword,
