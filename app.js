@@ -1,5 +1,7 @@
 const express = require("express"); // web framework for Node.js
 
+const routes = require("./routes/index");
+
 const morgan = require("morgan"); // HTTP request logger middleware for Node.js
 
 const rateLimit = require("express-rate-limit");
@@ -51,4 +53,5 @@ app.use(
 
 app.use(mongosanitize());
 
+app.use(routes);
 module.exports = app;
