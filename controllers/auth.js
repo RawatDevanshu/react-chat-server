@@ -1,7 +1,11 @@
 const jwt = require("jsonwebtoken");
 const otpGenerator = require("otp-generator");
-const User = require("../models/user");
 const crypto = require("crypto");
+
+const mailService = require("../services/mailer");
+
+const User = require("../models/user");
+const filterObj = require("../utils/filterObj");
 const { promisify } = require("util");
 
 const signToken = (userId) =>
@@ -93,6 +97,15 @@ exports.login = async (req, res, next) => {
     });
 
     // TODO Send Mail
+    mailService
+      .sendEmail({
+        from: "rawatdevanshu22@gmail.com",
+        to: "example@gmail.com",
+        subject: "OTP for Tawk",
+        text: `Your otp is ${new_otp}. this is valid for 10 minutes`,
+      })
+      .then(() => {})
+      .catch((err) => {});
 
     res.status(200).json({
       status: "success",
