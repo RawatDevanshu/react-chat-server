@@ -10,8 +10,9 @@ const sendSGMail = async ({
   recipient,
   sender,
   subject,
-  content,
+  html,
   attachments,
+  text,
 }) => {
   try {
     const from = sender || "rawatdevanshu22@gmail.com";
