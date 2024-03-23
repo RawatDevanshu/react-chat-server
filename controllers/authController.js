@@ -32,7 +32,7 @@ exports.login = async (req, res, next) => {
     !userDoc ||
     !(await userDoc.correctPassword(password, userDoc.password))
   ) {
-    res.status(400).json({
+    res.status(404).json({
       status: "error",
       message: "Email or Password is incorrect",
     });
@@ -227,7 +227,7 @@ exports.forgotPassword = async (req, res, next) => {
   // 1) get user email
   const user = await User.findOne({ email: req.body.email });
   if (!user) {
-    res.status(400).json({
+    res.status(404).json({
       status: "error",
       message: "There is no user with given email address",
     });
@@ -238,10 +238,11 @@ exports.forgotPassword = async (req, res, next) => {
   const resetToken = user.createPasswordResetToken();
   await user.save({ validateBeforeSave: false });
 
-  const resetURL = `https://tawk.com/auth/reset-password/?code=${resetToken}`;
+  // TODO PRODUCTION => Remove console.log for resetURL;
+  const resetURL = `/auth/reset-password/?token=${resetToken}`;
   try {
     // TODO => Send Emai With Reset URL
-    console.log(resetToken);
+    console.log(resetURL);
     res.status(200).json({
       status: "success",
       message: "Reset Password link sent to Email",
