@@ -1,24 +1,18 @@
 const express = require("express"); // web framework for Node.js
-
 const routes = require("./routes/index");
-
 const morgan = require("morgan"); // HTTP request logger middleware for Node.js
-
+const dotenv = require("dotenv");
 const rateLimit = require("express-rate-limit");
-
 const helmet = require("helmet");
-
 const mongosanitize = require("express-mongo-sanitize");
-
 const bodyParser = require("body-parser");
-
 const xss = require("xss");
-
 const cors = require("cors");
-
 const app = express();
 
 // app.use(xss());
+
+dotenv.config({ path: "./config.env" });
 
 app.use(
   cors({
