@@ -4,6 +4,7 @@ const mongoose = require("mongoose");
 const { Server } = require("socket.io");
 
 dotenv.config({ path: "./config.env" });
+const path = require("path");
 
 process.on("uncaughtException", (err) => {
   console.log(err);
@@ -45,7 +46,7 @@ io.on("connection", async (socket) => {
 
   console.log(`User connected ${socket_id}`);
   if (user_id) {
-    await User.findByIdAndUpdate(user_id, { socket_id });
+    await User.findByIdAndUpdate(user_id, { socket_id, status: "Online" });
   }
   socket.on("friend_request", async (data) => {
     console.log(data.to);
@@ -96,7 +97,40 @@ io.on("connection", async (socket) => {
     });
   });
 
-  socket.on("end", function () {
+  // Handle text/link message
+
+  socket.on("text_message", (data) => {
+    console.log("Recieved Message", data);
+
+    // data: {to, from, text}
+    // create a new conversation if it doesnt exist yet or add new message to the messages list
+
+    // save to db
+
+    // emit incoming_message -> to user
+
+    // emit outgoing_message -> from user
+  });
+
+  socket.on("file_message", (data) => {
+    console.log("Recieved Message", data);
+
+    // data: {to, from, text, file}
+    // get the file extension
+
+    const fileExtension = path.extname(data.file.name);
+
+    // generate a unique filename
+    const fileName = `${Date.now()}_${Math.floor(Math.random() * 1000)}${fileExtension}`;
+
+    // upload file to AWS s3
+  });
+
+  socket.on("end", async (data) => {
+    if (data.user_id) {
+      await User.findByIdAndUpdate(data.user_id, { status: "Offline" });
+    }
+    // TODO => broadcast user disconnected
     console.log("Closing connection");
     socket.disconnect(0);
   });
