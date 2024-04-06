@@ -98,6 +98,7 @@ exports.sendOTP = async (req, res, next) => {
     lowerCaseAlphabets: false,
     specialChars: false,
   });
+  console.log(`otp: ${new_otp}`);
 
   const otp_expiry_time = Date.now() + 10 * 60 * 1000; // 10 minutes
   const userDoc = await User.findByIdAndUpdate(userId, {
