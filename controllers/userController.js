@@ -1,4 +1,5 @@
 const User = require("../models/user");
+const FriendRequest = require("../models/friendRequest");
 
 exports.updateMe = async (req, res, next) => {
   const { user } = req;
@@ -49,7 +50,7 @@ exports.getRequests = async (req, res, next) => {
   }).populate("sender", "_id firstName lastName");
   res.status(200).json({
     status: "success",
-    data: friends,
+    data: requests,
     message: "Friends Found successfully!",
   });
 };

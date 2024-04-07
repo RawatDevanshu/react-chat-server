@@ -2,9 +2,9 @@ const app = require("./app");
 const dotenv = require("dotenv");
 const mongoose = require("mongoose");
 const { Server } = require("socket.io");
+const path = require("path");
 
 dotenv.config({ path: "./config.env" });
-const path = require("path");
 
 process.on("uncaughtException", (err) => {
   console.log(err);
@@ -13,6 +13,7 @@ process.on("uncaughtException", (err) => {
 
 const http = require("http");
 const User = require("./models/user");
+const FriendRequest = require("./models/friendRequest");
 
 const server = http.createServer(app);
 
@@ -63,7 +64,7 @@ io.on("connection", async (socket) => {
       message: "New Friend Request Recieved",
     });
     // emit event => "request sent"
-    io.to(from_user.socket_id).emit("request_sent", {
+    io.to(from.socket_id).emit("request_sent", {
       message: "Request sent successfully!",
     });
   });
