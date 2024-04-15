@@ -40,4 +40,4 @@ const OneToOneMessage = new mongoose.model(
   oneToOneMessageSchema,
 );
 
-module.export = OneToOneMessage;
+module.exports = OneToOneMessage;
